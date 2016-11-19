@@ -1,0 +1,26 @@
+Package: gmo
+Type: Package
+Title: Gradient-based Marginal Optimization
+Version: 0.1
+Authors@R: c(
+    person("Dustin", "Tran", email = "dustin@cs.columbia.edu", role = c("aut", "cre")),
+    person("Andrew", "Gelman", role = "aut"),
+    person("Aki", "Vehtari", role = "aut")
+    )
+Maintainer: Dustin Tran <dustin@cs.columbia.edu>
+Description: A package for fast optimization of marginal posterior
+    distributions. It provides uncertainty over any nuisance parameters,
+    and generalizes parameter estimation using marginal densities. gmo
+    acts as a middleground between full Bayesian inference over all
+    parameters and point estimation over all parameters.
+URL: https://groups.google.com/forum/#!forum/stan-users, http://mc-stan.org/
+BugReports: https://github.com/dustinvtran/gmo/issues
+License: GPL (>=3)
+Imports:
+    lme4,
+    loo (>= 0.1.4),
+    rstan (>= 2.8.0)
+Suggests:
+    testthat
+LazyData: yes
+RoxygenNote: 5.0.1
