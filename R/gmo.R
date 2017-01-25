@@ -199,6 +199,7 @@ GMO <- setRefClass("gmo",
     method="character",
     draws="integer",
     iter="integer",
+    eval_iter="integer",  # number of iterations to converge
     inner_iter="integer",
     cond_iter="integer",
     eta="numeric",
@@ -272,6 +273,10 @@ GMO <- setRefClass("gmo",
           alpha_sims <- g_alpha$theta_tilde[(m-1)*draws + 1:draws, ]
           if (draws == 1) {
             alpha_sims <- matrix(alpha_sims, nrow=1)
+          } else if (class(alpha_sims) != "matrix") {
+            # note the latter case can occur if inner_iter=1 and we
+            # end up collapsing a draws x 1 matrix into a draws vector
+            alpha_sims <- matrix(alpha_sims, ncol=1)
           }
           return(alpha_sims)
         }
@@ -389,20 +394,24 @@ GMO <- setRefClass("gmo",
         if (any(flags)) {
           print("Optimization terminated normally:")
           print(.get_code_string(flags))
+          eval_iter <<- tee
           cov <<- est_covariance(par)
           sims <<- .collect_alpha_sims()
           return()
         }
       }
       print("Maximum number of iterations hit, may not be at an optima")
+      eval_iter <<- iter
       cov <<- est_covariance(par)
       sims <<- .collect_alpha_sims()
       return()
     },
     .collect_alpha_sims = function() {
       alpha_sims <- .sample(1)
-      for (m in 2:inner_iter) {
-        alpha_sims <- rbind(alpha_sims, .sample(m))
+      if (inner_iter > 1) {
+        for (m in 2:inner_iter) {
+          alpha_sims <- rbind(alpha_sims, .sample(m))
+        }
       }
       return(alpha_sims)
     },
