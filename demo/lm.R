@@ -1,4 +1,9 @@
 #!/usr/bin/env Rscript
+# TODO(dt): Note Andrew wanted benchmarks on these guys rather than
+# just the linear model
+# 1 step of lmer + varying intercept
+# 1 step of GMO while running outer iteration conditional on
+# group-level variances
 library(rstan)
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
@@ -27,9 +32,12 @@ data_lm <- data.frame(y=data_full$y, X=data_full$X[, 1:D+1]) # don't include int
 fit.gmo <- gmo("models/lm.stan", "models/lm_local.stan",
                 data=data, inner_iter=1L, iter=1L)
 fit.opt <- optimizing(stan_model("models/lm.stan"), data=data,
-                      as_vector=FALSE, draws=1L*5L, constrained=FALSE)
+                      as_vector=FALSE, draws=1L*5L, constrained=FALSE, save_iterations=TRUE)
 fit.lm <- lm(y ~ ., data=data_lm)
 fit.lme <- gls(y ~ ., data=data_lm)
+# 1 step of lmer + varying intercept
+# 1 step of GMO while running outer iteration conditional on
+# group-level variances
 
 print(fit.gmo$par)
 print(fit.opt)
@@ -92,16 +100,27 @@ print(fit.lm.time)
 print(fit.lme.time)
 
 # N = 10000; D=1000
-#> print(fit.gmo.time) # inner_iter=1L, draws=5L
-#[1] 2.138441 1.660907 1.738494 2.178171 1.803406
-#> print(fit.gmo2.time) # inner_iter=10L, draws=5L
-#[1] 4.579119 4.580811 5.023243 6.996433 4.821303
-#> print(fit.opt.time)
-#[1] 2.010840 2.163910 2.349114 2.529385 2.347591
-#> print(fit.lm.time)
-#[1] 5.852461 6.109148 9.949945 6.245936 6.042907
-#> print(fit.lme.time)
-#[1]  6.150059  6.679910 10.822603  6.808194  6.676801
-# Note although GMO is actually faster here than stan-optimize, this is
+> print(fit.gmo.time) # inner_iter=1L, draws=5L
+[1] 2.138441 1.660907 1.738494 2.178171 1.803406
+> print(fit.gmo2.time) # inner_iter=10L, draws=5L
+[1] 4.579119 4.580811 5.023243 6.996433 4.821303
+> print(fit.opt.time)
+[1] 2.010840 2.163910 2.349114 2.529385 2.347591
+> print(fit.lm.time)
+[1] 5.852461 6.109148 9.949945 6.245936 6.042907
+> print(fit.lme.time)
+[1]  6.150059  6.679910 10.822603  6.808194  6.676801
+
+# comments
+# + although GMO is actually faster here than stan-optimize, this is
 # because it runs stan-optimize on just the local model, which is 1
 # parameter rather than the total of 1002.
+# + lme is roughly as fast as lm; my prediction while lme4 is still so
+# fast is because future calls to gls are very fast (it caches the
+# most intensive calculations such as X X^T).
+# + gmo2 is super slow compared to gmo. the grad_log_prob calls are
+# making gmo slow. this can be made more efficient when implemented
+# instan
+# + lbfgs is >2x faster than lm. this is cool. it mirrors bob's
+# results but in fact even more as it doesn't require the least
+# squares hacking. maybe stan-optimize improved in future versions?
