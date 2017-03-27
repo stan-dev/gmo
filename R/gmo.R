@@ -418,6 +418,22 @@ GMO <- setRefClass("gmo",
     .log_p_laplace = function(alpha_sims, m, g_flag=TRUE) {
       grad_log_p_sims <- array(NA, c(draws, num_par))
       sink(file="/dev/null")
+      # TODO
+      # This is the main bottleneck in the code:
+      #
+      # 1. It needlessly takes the gradient of the joint density with
+      #   respect to all parameters, when it only needs to do so with
+      #   respect to ``par``. This is slow if there are many local
+      #   parameters.
+      # 2. There are numerous grad calls, one for each alpha draw,
+      #   when ideally you can just call the backward pass once.
+      #   (Contrast to implementation in Edward.) This is slow if there
+      #   are many draws.
+      # 3. For vb()/sampling(), there are 3x as many grad log prob
+      #   calls to handle transformations.
+      #
+      # See ``demo/gmo_profile.R`` for more details. These limitations
+      # are due to limitations to the Stan interface.
       for (s in 1:draws) {
         grad_log_p_sims[s, ] <- grad_log_prob(full_model,
                                         c(par, alpha_sims[s, ]),

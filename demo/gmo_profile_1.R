@@ -1,4 +1,7 @@
 #!/usr/bin/env Rscript
+# This builds off Bob Carpenter's benchmarks on stan-optimize vs lm.
+# We use it to investigate the bottlenecks in the GMO implementation.
+#
 # TODO(dt): Note Andrew wanted benchmarks on these guys rather than
 # just the linear model
 # 1 step of lmer + varying intercept
